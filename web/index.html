@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>marcos.chat</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%231B3A5C'/><text x='50' y='72' text-anchor='middle' font-size='60' fill='white' font-family='monospace'>m</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #FAFAF8;
+      --surface: #F0EFEB;
+      --text: #2C2C2C;
+      --muted: #8A8578;
+      --accent: #1B3A5C;
+      --accent-hover: #15304d;
+      --border: #D8D5CE;
+      --watermark: #C8C5BE;
+      --mono: 'SF Mono', 'Fira Code', 'Consolas', 'Liberation Mono', monospace;
+      --radius: 6px;
+    }
+
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Landing ── */
+    #landing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100dvh;
+      padding: 24px;
+      transition: opacity 0.4s ease;
+    }
+    #landing.fade-out { opacity: 0; pointer-events: none; }
+
+    #landing h1 {
+      font-family: var(--mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .watermark {
+      color: var(--watermark);
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: center;
+      max-width: 480px;
+      margin-bottom: 40px;
+      font-weight: 400;
+    }
+
+    /* ── Input row ── */
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      width: 100%;
+      max-width: 560px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      transition: border-color 0.2s;
+    }
+    .input-row:focus-within {
+      border-color: var(--accent);
+    }
+
+    .input-row textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      font-family: var(--mono);
+      color: var(--text);
+      background: transparent;
+      resize: none;
+      overflow-y: hidden;
+      line-height: 1.5;
+      max-height: 120px;
+      padding: 2px 0;
+    }
+    .input-row textarea::placeholder { color: var(--muted); }
+
+    .send-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius);
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .send-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .send-btn:disabled { opacity: 0.3; cursor: default; }
+    .send-btn svg { width: 16px; height: 16px; }
+
+    /* ── Chat view ── */
+    #chat {
+      display: none;
+      flex-direction: column;
+      height: 100dvh;
+    }
+    #chat.active { display: flex; }
+
+    #chat-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 760px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Scrollbar */
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      line-height: 1.65;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      border: 1px solid transparent;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .msg.assistant.thinking::after {
+      content: '...';
+      color: var(--muted);
+    }
+
+    /* Markdown in assistant bubbles */
+    .msg.assistant code {
+      background: rgba(0,0,0,0.05);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+    .msg.assistant pre {
+      background: var(--text);
+      color: #E8E6E0;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      margin: 8px 0;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .msg.assistant pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+    .msg.assistant a { color: var(--accent); text-decoration: underline; }
+    .msg.assistant a:hover { color: var(--accent-hover); }
+    .msg.assistant strong { font-weight: 700; }
+    .msg.assistant ul, .msg.assistant ol { margin: 4px 0 4px 20px; }
+    .msg.assistant li { margin: 2px 0; }
+    .msg.assistant p { margin: 6px 0; }
+    .msg.assistant p:first-child { margin-top: 0; }
+    .msg.assistant p:last-child { margin-bottom: 0; }
+
+    #chat-input-area {
+      padding: 12px 24px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      body { font-size: 13px; }
+      .msg { max-width: 92%; font-size: 12px; }
+      .watermark { font-size: 12px; }
+      #landing h1 { font-size: 1.6rem; }
+      .input-row { max-width: 100%; }
+      #messages { padding: 16px 12px; }
+      #chat-input-area { padding: 10px 12px 14px; }
+      #chat-header { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Landing -->
+  <div id="landing">
+    <h1>marcos.chat</h1>
+    <p class="watermark">Hi, This is Marco's AI companion. He helps Marco to connect with his old or new friends, get mutual updates and arrange meetups. You can ask him anything about Marco.</p>
+    <form id="landing-form" class="input-row">
+      <textarea id="landing-input" rows="1" placeholder="say something..." autofocus></textarea>
+      <button type="submit" class="send-btn" id="landing-send-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+    </form>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat">
+    <div id="chat-header">marcos.chat</div>
+    <div id="messages"></div>
+    <div id="chat-input-area">
+      <form id="chat-form" class="input-row">
+        <textarea id="chat-input" rows="1" placeholder="say something..."></textarea>
+        <button type="submit" class="send-btn" id="chat-send-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    /* ── Config (injected by serve.js) ── */
+    const GATEWAY_TOKEN = '__GATEWAY_TOKEN__';
+
+    /* ── State ── */
+    let ws = null;
+    let sessionKey = null;
+    let inChatMode = false;
+    let currentBubble = null;
+    let currentText = '';
+    let reconnectDelay = 1000;
+    const pending = new Map();
+
+    /* ── Elements ── */
+    const landing      = document.getElementById('landing');
+    const landingForm  = document.getElementById('landing-form');
+    const landingInput = document.getElementById('landing-input');
+    const landingSend  = document.getElementById('landing-send-btn');
+    const chatView     = document.getElementById('chat');
+    const chatForm     = document.getElementById('chat-form');
+    const chatInput    = document.getElementById('chat-input');
+    const chatSend     = document.getElementById('chat-send-btn');
+    const messagesEl   = document.getElementById('messages');
+
+    /* ── Helpers ── */
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function stripThinking(text) {
+      let r = text.replace(/<think>[\s\S]*?<\/think>\n*/g, '');
+      const i = r.indexOf('<think>');
+      if (i !== -1) r = r.substring(0, i);
+      return r.trim();
+    }
+
+    function renderMarkdown(raw) {
+      let h = escapeHtml(raw);
+      h = h.replace(/```(\w*)\n([\s\S]*?)```/g, (_, _lang, code) => `<pre><code>${code}</code></pre>`);
+      h = h.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+      h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      h = h.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+      h = h.replace(/(https?:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      h = h.replace(/\n/g, '<br>');
+      return h;
+    }
+
+    function extractText(msg) {
+      if (!msg) return '';
+      if (typeof msg.text === 'string') return msg.text;
+      const c = msg.content;
+      if (typeof c === 'string') return c;
+      if (Array.isArray(c)) {
+        return c.filter(b => b.type === 'text' && typeof b.text === 'string').map(b => b.text).join('');
+      }
+      return '';
+    }
+
+    function uuid() { return crypto.randomUUID(); }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => { messagesEl.scrollTop = messagesEl.scrollHeight; });
+    }
+
+    function setReady(ready) {
+      landingSend.disabled = !ready;
+      chatSend.disabled = !ready;
+    }
+
+    function setInputEnabled(on) {
+      chatInput.disabled = !on;
+      chatSend.disabled = !on;
+      if (on) chatInput.focus();
+    }
+
+    /* ── WebSocket ── */
+    function wsConnect() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${proto}//${location.host}/ws`);
+
+      ws.onopen = () => {
+        console.log('[ws] connected, waiting for challenge');
+        reconnectDelay = 1000;
+      };
+
+      ws.onmessage = (e) => {
+        let msg;
+        try { msg = JSON.parse(e.data); } catch { return; }
+
+        if (msg.type === 'res' && pending.has(msg.id)) {
+          const { resolve, reject } = pending.get(msg.id);
+          pending.delete(msg.id);
+          msg.ok === false ? reject(msg.error) : resolve(msg.payload);
+          return;
+        }
+
+        if (msg.type === 'event') {
+          handleEvent(msg);
+          return;
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('[ws] closed, retry in', reconnectDelay, 'ms');
+        setReady(false);
+        sessionKey = null;
+        setTimeout(wsConnect, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+      };
+
+      ws.onerror = (err) => console.error('[ws] error', err);
+    }
+
+    function rpc(method, params) {
+      const id = uuid();
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        ws.send(JSON.stringify({ type: 'req', id, method, params }));
+      });
+    }
+
+    async function sendConnect() {
+      try {
+        const params = {
+          minProtocol: 3, maxProtocol: 3,
+          client: { id: 'webchat', version: '1.0', platform: 'web', mode: 'webchat' },
+          role: 'operator',
+          scopes: ['operator.admin', 'operator.write', 'operator.read'],
+          caps: [],
+        };
+        if (GATEWAY_TOKEN) params.auth = { token: GATEWAY_TOKEN };
+
+        const payload = await rpc('connect', params);
+        sessionKey = payload?.snapshot?.sessionDefaults?.mainSessionKey || 'main';
+        console.log('[ws] session:', sessionKey);
+        setReady(true);
+        await loadHistory();
+      } catch (e) {
+        console.error('[ws] connect failed:', e);
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const payload = await rpc('chat.history', { sessionKey, limit: 50 });
+        const items = Array.isArray(payload?.messages) ? payload.messages : [];
+        if (items.length > 0) {
+          enterChatMode(true);
+          items.forEach(m => {
+            const role = (typeof m.role === 'string' ? m.role : '').toLowerCase();
+            if (role !== 'user' && role !== 'assistant') return;
+            const text = extractText(m);
+            if (text) addBubble(role, role === 'assistant' ? stripThinking(text) : text);
+          });
+          scrollToBottom();
+        }
+      } catch (e) {
+        console.error('[ws] history failed:', e);
+      }
+    }
+
+    /* ── Events ── */
+    function handleEvent(msg) {
+      const evt = msg.event;
+      const p = msg.payload || {};
+
+      if (evt === 'connect.challenge') {
+        console.log('[ws] challenge received');
+        sendConnect();
+        return;
+      }
+
+      if (evt === 'chat') {
+        const state = p.state;
+        if (state === 'delta') {
+          const text = extractText(p.message);
+          if (text) setDelta(text);
+        } else if (state === 'final') {
+          const text = extractText(p.message);
+          finalizeAssistant(text);
+        } else if (state === 'error') {
+          finalizeAssistant('Something went wrong. Please try again.');
+        } else if (state === 'aborted') {
+          finalizeAssistant(currentText || '(aborted)');
+        }
+        return;
+      }
+    }
+
+    /* ── Chat UI ── */
+    function enterChatMode(instant) {
+      if (inChatMode) return;
+      inChatMode = true;
+      if (instant) {
+        landing.style.display = 'none';
+        chatView.classList.add('active');
+      } else {
+        landing.classList.add('fade-out');
+        setTimeout(() => {
+          landing.style.display = 'none';
+          chatView.classList.add('active');
+          chatInput.focus();
+        }, 400);
+      }
+    }
+
+    function addBubble(role, text) {
+      const el = document.createElement('div');
+      el.className = `msg ${role}`;
+      if (role === 'assistant') {
+        el.innerHTML = renderMarkdown(text);
+      } else {
+        el.textContent = text;
+      }
+      messagesEl.appendChild(el);
+      return el;
+    }
+
+    function createAssistantBubble() {
+      currentText = '';
+      const el = document.createElement('div');
+      el.className = 'msg assistant thinking';
+      messagesEl.appendChild(el);
+      currentBubble = el;
+      scrollToBottom();
+    }
+
+    function setDelta(fullText) {
+      if (!currentBubble) createAssistantBubble();
+      currentText = fullText;
+      const visible = stripThinking(currentText);
+      if (visible) {
+        currentBubble.classList.remove('thinking');
+        currentBubble.textContent = visible;
+      }
+      scrollToBottom();
+    }
+
+    function finalizeAssistant(fullText) {
+      if (!currentBubble) createAssistantBubble();
+      const text = stripThinking(fullText || currentText);
+      currentBubble.classList.remove('thinking');
+      if (text) {
+        currentBubble.innerHTML = renderMarkdown(text);
+      } else {
+        currentBubble.textContent = '';
+      }
+      currentBubble = null;
+      currentText = '';
+      setInputEnabled(true);
+      scrollToBottom();
+    }
+
+    /* ── Send ── */
+    async function sendMessage(text) {
+      text = text.trim();
+      if (!text || !sessionKey) return;
+
+      enterChatMode(false);
+      addBubble('user', text);
+      scrollToBottom();
+      setInputEnabled(false);
+      createAssistantBubble();
+
+      try {
+        await rpc('chat.send', {
+          sessionKey,
+          message: text,
+          deliver: false,
+          idempotencyKey: uuid(),
+        });
+      } catch (e) {
+        console.error('[chat] send failed:', e);
+        finalizeAssistant('Failed to send. Please try again.');
+      }
+    }
+
+    /* ── Form handlers ── */
+    function onSubmit(input, e) {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      autoResize(input);
+      sendMessage(text);
+    }
+
+    landingForm.addEventListener('submit', (e) => onSubmit(landingInput, e));
+    chatForm.addEventListener('submit', (e) => onSubmit(chatInput, e));
+
+    [landingInput, chatInput].forEach(el => {
+      el.addEventListener('input', () => autoResize(el));
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          el.closest('form').dispatchEvent(new Event('submit'));
+        }
+      });
+    });
+
+    /* ── Boot ── */
+    wsConnect();
+  })();
+  </script>
+</body>
+</html>

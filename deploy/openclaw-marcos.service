@@ -1,0 +1,22 @@
+[Unit]
+Description=OpenClaw Marco Avatar Gateway
+After=network-online.target ollama.service
+Wants=network-online.target
+Requires=ollama.service
+
+[Service]
+Type=simple
+User=nvidia
+Group=nvidia
+WorkingDirectory=/home/nvidia/marcos-chat
+ExecStart=/usr/bin/openclaw gateway
+Restart=on-failure
+RestartSec=10
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="OPENCLAW_CONFIG_PATH=/home/nvidia/.openclaw/openclaw.json"
+Environment="NODE_ENV=production"
+Environment="NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache"
+Environment="OPENCLAW_NO_RESPAWN=1"
+
+[Install]
+WantedBy=multi-user.target

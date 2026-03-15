@@ -1,0 +1,20 @@
+[Unit]
+Description=marcos.chat Custom Web UI
+After=network-online.target openclaw-marcos.service
+Wants=network-online.target
+Requires=openclaw-marcos.service
+
+[Service]
+Type=simple
+User=nvidia
+Group=nvidia
+WorkingDirectory=/home/nvidia/marcos-chat/web
+ExecStart=/usr/bin/node serve.js
+Restart=on-failure
+RestartSec=5
+Environment="PORT=18790"
+Environment="GATEWAY_TOKEN=796240832f1d191dcd0a20ece44e4409"
+Environment="NODE_ENV=production"
+
+[Install]
+WantedBy=multi-user.target

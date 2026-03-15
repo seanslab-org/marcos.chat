@@ -6,12 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **marcos.chat** — Marco Song's personal AI avatar experiment.
 
-An AI avatar running on a local Jetson Orin 16G device, powered by OpenClaw with a local Qwen3.5 14B Q4_K_M model. Accessible via a public web chat interface at `marcos.chat`, connected to the internet through Tailscale with a fixed IP.
+An AI avatar running on a local Jetson Orin 16G device, powered by OpenClaw with a local Qwen3.5 9B Q8_0 model via Ollama. Accessible via a web chat interface at `marcos.chat`, connected through Tailscale.
 
 ### Key Components
-- **OpenClaw** — AI avatar framework with personal context
-- **Qwen3.5 14B Q4_K_M** — Local LLM running on Jetson Orin 16G
-- **Web server** — Public chat interface at http://marcos.chat
+- **OpenClaw 2026.3.x** — AI avatar framework with personal context
+- **Ollama 0.18.0** — Local LLM serving
+- **Qwen3.5 9B Q8_0** — Local LLM running on Jetson Orin 16G (~10GB)
 - **Tailscale** — Network connectivity with fixed IP
 
 ### Design Principles
@@ -133,11 +133,33 @@ This document defines the required engineering workflow. The standard is "firmwa
 
 ## Hardware Platform
 
-- **NVIDIA Jetson Orin 16GB** — Runs OpenClaw + Qwen3.5 14B locally
-- Connected via **Tailscale** (fixed IP)
+- **NVIDIA Jetson Orin 16GB** (JetPack 5, R35.6.0)
+- **Hostname**: marcos
+- **Tailscale IP**: 100.65.235.58
+- **SSH**: `nvidia@100.65.235.58`
+- **NVMe SSD**: 116GB total
+
+## Architecture
+
+```
+Tailscale → marcos (100.65.235.58)
+  → OpenClaw Gateway (:18789, loopback) → WebChat UI at /openclaw/webchat
+  → Ollama (:11434) → Qwen3.5 9B Q8_0
+```
+
+## Services (systemd)
+
+- `ollama.service` — LLM serving (port 11434)
+- `openclaw-marcos.service` — OpenClaw gateway (port 18789)
+
+## Key Paths (on marcos)
+
+- `/home/nvidia/marcos-chat/` — Workspace (SOUL.md, IDENTITY.md, USER.md)
+- `/home/nvidia/.openclaw/openclaw.json` — OpenClaw config
+- `/etc/systemd/system/openclaw-marcos.service` — Service unit
 
 ## Common Tools & Environment
 
-- **Python 3** (prefer 3.13+)
-- **pytest** — Testing framework
-- Run tests: `python3 -m pytest -v`
+- **Node.js 22** — OpenClaw runtime
+- **Ollama** — LLM serving
+- **OpenClaw** — AI avatar framework

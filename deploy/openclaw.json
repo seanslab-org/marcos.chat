@@ -1,0 +1,69 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/home/nvidia/marcos-chat",
+      "model": {
+        "primary": "ollama/qwen3.5:9b-q8_0"
+      },
+      "timeoutSeconds": 120,
+      "maxConcurrent": 2,
+      "memorySearch": {
+        "enabled": false
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "identity": {
+          "name": "Marco (AI)",
+          "emoji": "🤖",
+          "theme": "orange"
+        }
+      }
+    ]
+  },
+  "models": {
+    "providers": {
+      "ollama": {
+        "baseUrl": "http://127.0.0.1:11434",
+        "apiKey": "ollama-local",
+        "api": "ollama",
+        "models": [
+          {
+            "id": "qwen3.5:9b-q8_0",
+            "name": "Qwen 3.5 9B Q8",
+            "contextWindow": 32768,
+            "maxTokens": 4096,
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+          }
+        ]
+      }
+    }
+  },
+  "tools": {
+    "profile": "minimal",
+    "allow": [],
+    "deny": ["*"]
+  },
+  "gateway": {
+    "port": 18789,
+    "bind": "lan",
+    "mode": "local",
+    "auth": {
+      "mode": "none"
+    },
+    "tailscale": {
+      "mode": "off"
+    },
+    "controlUi": {
+      "enabled": true,
+      "basePath": "/openclaw"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "redactSensitive": "tools"
+  }
+}
