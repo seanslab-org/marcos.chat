@@ -16,6 +16,14 @@
 - **Observation**: The Jetson marcos has slow internet (~4 MB/s). Downloads from GitHub often time out.
 - **Rule**: For large files (Ollama binary, models), download on Mac first and scp to Jetson.
 
+## 2026-03-16: Jetson Orin 16G crashes under repeated LLM load
+- **Observation**: Running multiple back-to-back LLM test requests via OpenClaw causes marcos to become unreachable (SSH times out, needs power cycle).
+- **Rule**: Avoid rapid-fire LLM requests during testing. Space out test messages and limit to 1-2 short prompts. The 16GB Orin can be overwhelmed by concurrent Qwen3.5 9B inference.
+
+## 2026-03-16: crypto.randomUUID() requires HTTPS
+- **Mistake**: Used `crypto.randomUUID()` in browser JS. This API requires a secure context (HTTPS). When accessed via plain HTTP, it throws an error that silently breaks the WebSocket handshake.
+- **Rule**: Always provide a Math.random() fallback for UUID generation in browser code that may be served over HTTP.
+
 ## 2026-03-16: OpenClaw WebSocket protocol details
 - **Mistake**: Assumed request `id` could be a number, `client.id` could be arbitrary, and no auth was needed.
 - **Rule**: OpenClaw gateway protocol requires:
