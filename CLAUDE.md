@@ -6,18 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **marcos.chat** — Marco Song's personal AI avatar experiment.
 
-An AI avatar running on a local Jetson Orin 16G device, powered by OpenClaw with a local Qwen3.5 9B Q8_0 model via Ollama. Accessible via a web chat interface at `marcos.chat`, connected through Tailscale.
+An AI avatar running on a local Jetson Orin 16G device, powered by OpenClaw with a local Qwen3.5 9B Q4_K_M model via Ollama. Accessible via a custom walkie.sh-inspired web chat interface at `marcos.chat`, connected through Tailscale.
 
 ### Key Components
 - **OpenClaw 2026.3.x** — AI avatar framework with personal context
-- **Ollama 0.18.0** — Local LLM serving
-- **Qwen3.5 9B Q8_0** — Local LLM running on Jetson Orin 16G (~10GB)
+- **Ollama 0.18.0** — Local LLM serving (KEEP_ALIVE=-1, model always loaded)
+- **marcos-chat model** — Custom Ollama model (Qwen3.5 9B Q4_K_M, 6.6GB, thinking disabled)
+- **web/serve.js** — Zero-dep Node.js server + WebSocket proxy (:18790)
+- **web/index.html** — Single-file chat UI (monospace, walkie.sh-inspired)
 - **Tailscale** — Network connectivity with fixed IP
 
 ### Design Principles
 - **Local-first**: All AI inference runs on-device (Jetson Orin 16G)
 - **Personal AI avatar**: Progressively enhanced with skills and personal context
 - **Vibe Coding**: Built iteratively with Claude Code as the primary development tool
+- **UI Style**: walkie.sh-inspired — monospace, flat, minimal. Silver/white primary, earth tones secondary, deep blue accents, no red/green
 
 ## Engineering Guideline
 
@@ -142,24 +145,58 @@ This document defines the required engineering workflow. The standard is "firmwa
 ## Architecture
 
 ```
-Tailscale → marcos (100.65.235.58)
-  → OpenClaw Gateway (:18789, loopback) → WebChat UI at /openclaw/webchat
-  → Ollama (:11434) → Qwen3.5 9B Q8_0
+Tailscale HTTPS → marcos.tail159bb1.ts.net / 100.65.235.58
+  → serve.js (:18790, 0.0.0.0)
+    ├─ HTTP → index.html (GATEWAY_TOKEN injected)
+    └─ WS /ws → TCP pipe (Origin/Host rewritten) → OpenClaw (:18789) → Ollama (:11434) → marcos-chat model
 ```
+
+### OpenClaw WebSocket Protocol
+- Connect: wait for `connect.challenge` event → send `{type:"req", id:<UUID>, method:"connect", params:{...auth, scopes}}`
+- Chat: `chat.send` with sessionKey + idempotencyKey → streaming via `event:"chat"` with `payload.state: "delta"|"final"`
+- Message content format: `[{type:"text", text:"..."}]`
+- New session per page refresh (sessionKey = `agent:main:main:web:<uuid>`)
 
 ## Services (systemd)
 
-- `ollama.service` — LLM serving (port 11434)
+- `ollama.service` — LLM serving (port 11434, KEEP_ALIVE=-1)
+- `ollama-preload.service` — Preloads model on boot
 - `openclaw-marcos.service` — OpenClaw gateway (port 18789)
+- `marcos-chat-web.service` — Custom web UI (port 18790, GATEWAY_TOKEN env)
 
 ## Key Paths (on marcos)
 
 - `/home/nvidia/marcos-chat/` — Workspace (SOUL.md, IDENTITY.md, USER.md)
+- `/home/nvidia/marcos-chat/web/` — Web UI (serve.js, index.html)
 - `/home/nvidia/.openclaw/openclaw.json` — OpenClaw config
-- `/etc/systemd/system/openclaw-marcos.service` — Service unit
+- `/etc/systemd/system/` — Service units
+
+## Common Commands
+
+```bash
+# Deploy persona files from Mac
+scp SOUL.md IDENTITY.md USER.md nvidia@100.65.235.58:/home/nvidia/marcos-chat/
+
+# Deploy web UI from Mac
+scp web/serve.js web/index.html nvidia@100.65.235.58:/home/nvidia/marcos-chat/web/
+
+# Restart services (sudo password: nvidia)
+ssh nvidia@100.65.235.58 "echo nvidia | sudo -S systemctl restart openclaw-marcos.service marcos-chat-web.service 2>&1"
+
+# Check status
+ssh nvidia@100.65.235.58 "systemctl is-active ollama openclaw-marcos marcos-chat-web && curl -s http://127.0.0.1:18789/health && ollama ps"
+```
 
 ## Common Tools & Environment
 
-- **Node.js 22** — OpenClaw runtime
-- **Ollama** — LLM serving
-- **OpenClaw** — AI avatar framework
+- **Node.js 22** — OpenClaw + serve.js runtime
+- **Ollama 0.18.0** — LLM serving
+- **OpenClaw 2026.3.2** — AI avatar framework
+
+## Performance Notes
+
+- Qwen3.5 9B Q4_K_M (6.6GB) on 16GB unified memory → ~4GB free
+- Thinking disabled (`thinkingDefault: "off"`) — critical for speed
+- Model kept loaded forever (KEEP_ALIVE=-1) — no cold start
+- Response time: ~36s (Jetson GPU inference bottleneck)
+- **Do NOT run rapid-fire LLM requests** — can OOM crash the Jetson
