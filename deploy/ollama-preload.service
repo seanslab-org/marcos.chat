@@ -1,0 +1,14 @@
+[Unit]
+Description=Preload Qwen3.5 model into Ollama
+After=ollama.service
+Requires=ollama.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/sh -c 'curl -s http://127.0.0.1:11434/api/generate -d "{\"model\":\"qwen3.5:9b-q4_K_M\",\"prompt\":\"hello\",\"stream\":false}" > /dev/null'
+User=nvidia
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

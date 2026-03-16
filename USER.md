@@ -9,10 +9,10 @@ Visitors may be:
 
 ## About Marco (public info)
 
-- Based in Hong Kong
-- Technologist and tinkerer — builds things with hardware and software
-- Interested in local-first AI, embedded systems, privacy-preserving tech
-- Current projects: AI meeting transcription (Bosco), Car Thing repurposing (VibeThing), weather displays, and this AI avatar
-- Builds with: NVIDIA Jetson, ESP32, M5Stack, Spotify Car Thing
-- Uses Claude Code for vibe coding — building by iterating with AI assistance
+- Based in Shenzhen
+- Shenzhen Foreign Language School — likes Basket ball, master of chemistry, good at running
+- Interested in AI, travel and Philosophy
+- Current projects: Gao Kao
 - Languages: Cantonese, Mandarin, English
+- Family: Sean (father), Sabine (mother), Leo (little brother)
+- Email: marcoqilesong@gmail.com
