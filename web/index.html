@@ -409,7 +409,7 @@
       try {
         const params = {
           minProtocol: 3, maxProtocol: 3,
-          client: { id: 'webchat', version: '1.0', platform: 'web', mode: 'webchat' },
+          client: { id: 'openclaw-control-ui', version: '1.0', platform: 'web', mode: 'ui' },
           role: 'operator',
           scopes: ['operator.admin', 'operator.write', 'operator.read'],
           caps: [],
@@ -566,7 +566,7 @@
     function onSubmit(input, e) {
       e.preventDefault();
       const text = input.value.trim();
-      if (!text) return;
+      if (!text || !sessionKey) return;
       input.value = '';
       autoResize(input);
       sendMessage(text);

@@ -24,11 +24,19 @@
 - **Mistake**: Used `crypto.randomUUID()` in browser JS. This API requires a secure context (HTTPS). When accessed via plain HTTP, it throws an error that silently breaks the WebSocket handshake.
 - **Rule**: Always provide a Math.random() fallback for UUID generation in browser code that may be served over HTTP.
 
+## 2026-03-30: OpenClaw 2026.3.28 scope enforcement change
+- **Observation**: After upgrading OpenClaw from 2026.3.2 to 2026.3.28, `chat.send` failed with `missing scope: operator.write`. The new version enforces device identity (public key auth) for full operator scopes. Webchat clients with simple token auth get their scopes silently cleared.
+- **Rule**: For webchat clients without device identity, use `client.id: "openclaw-control-ui"` with `mode: "ui"` and set `gateway.controlUi.dangerouslyDisableDeviceAuth: true` + `allowInsecureAuth: true` in the config. Also set `gateway.trustedProxies: ["127.0.0.1", "::1"]` when proxying via serve.js.
+
+## 2026-03-30: First message lost on page load
+- **Observation**: The `onSubmit` handler cleared the input field before `sendMessage` checked if the WebSocket was ready (`sessionKey` set). If the user typed and hit Enter before the WS handshake completed, the message was silently lost.
+- **Rule**: Always guard form submission with readiness checks (`!sessionKey`) before clearing user input.
+
 ## 2026-03-16: OpenClaw WebSocket protocol details
 - **Mistake**: Assumed request `id` could be a number, `client.id` could be arbitrary, and no auth was needed.
 - **Rule**: OpenClaw gateway protocol requires:
   - Request frame: `{type:"req", id:<UUID string>, method, params}` — id must be non-empty string
-  - Client ID: must be a known constant (`"webchat"`, `"webchat-ui"`, `"cli"`, etc.)
+  - Client ID: must be a known constant (`"openclaw-control-ui"`, `"webchat"`, `"cli"`, etc.) — use `"openclaw-control-ui"` for full operator scopes with token auth
   - Auth: when `gateway.auth.mode` is `"token"`, include `auth:{token}` in connect params
   - Scopes: `["operator.admin","operator.write","operator.read"]` needed for chat operations
   - Origin header: must match `gateway.controlUi.allowedOrigins` — proxy must rewrite it

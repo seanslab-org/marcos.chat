@@ -1,26 +1,7 @@
 {
-  "agents": {
-    "defaults": {
-      "workspace": "/home/nvidia/marcos-chat",
-      "model": {
-        "primary": "ollama/qwen3.5:9b-q8_0"
-      },
-      "timeoutSeconds": 120,
-      "maxConcurrent": 2,
-      "memorySearch": {
-        "enabled": false
-      }
-    },
-    "list": [
-      {
-        "id": "main",
-        "identity": {
-          "name": "Marco (AI)",
-          "emoji": "🤖",
-          "theme": "orange"
-        }
-      }
-    ]
+  "logging": {
+    "level": "info",
+    "redactSensitive": "tools"
   },
   "models": {
     "providers": {
@@ -30,33 +11,60 @@
         "api": "ollama",
         "models": [
           {
-            "id": "qwen3.5:9b-q8_0",
-            "name": "Qwen 3.5 9B Q8",
-            "contextWindow": 32768,
-            "maxTokens": 4096,
+            "id": "marcos-chat",
+            "name": "Qwen 3.5 9B Q4_K_M",
             "reasoning": false,
             "input": ["text"],
-            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 16384,
+            "maxTokens": 4096
           }
         ]
       }
     }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "ollama/marcos-chat"
+      },
+      "workspace": "/home/nvidia/marcos-chat",
+      "memorySearch": {
+        "enabled": false
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "timeoutSeconds": 300,
+      "maxConcurrent": 2,
+      "thinkingDefault": "off"
+    },
+    "list": [
+      {
+        "id": "main",
+        "identity": {
+          "name": "Marco (AI)",
+          "theme": "orange",
+          "emoji": "🤖"
+        }
+      }
+    ]
   },
   "tools": {
     "profile": "minimal",
     "allow": [],
     "deny": ["*"]
   },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
   "gateway": {
     "port": 18789,
-    "bind": "lan",
     "mode": "local",
-    "auth": {
-      "mode": "none"
-    },
-    "tailscale": {
-      "mode": "off"
-    },
+    "bind": "lan",
     "controlUi": {
       "enabled": true,
       "basePath": "/openclaw",
@@ -68,11 +76,17 @@
         "http://localhost:18790",
         "http://127.0.0.1:18790",
         "http://100.65.235.58:18790"
-      ]
-    }
-  },
-  "logging": {
-    "level": "info",
-    "redactSensitive": "tools"
+      ],
+      "dangerouslyDisableDeviceAuth": true,
+      "allowInsecureAuth": true
+    },
+    "auth": {
+      "mode": "token",
+      "token": "796240832f1d191dcd0a20ece44e4409"
+    },
+    "tailscale": {
+      "mode": "off"
+    },
+    "trustedProxies": ["127.0.0.1", "::1"]
   }
 }

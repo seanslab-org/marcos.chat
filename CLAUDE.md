@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 An AI avatar running on a local Jetson Orin 16G device, powered by OpenClaw with a local Qwen3.5 9B Q4_K_M model via Ollama. Accessible via a custom walkie.sh-inspired web chat interface at `marcos.chat`, connected through Tailscale.
 
 ### Key Components
-- **OpenClaw 2026.3.x** — AI avatar framework with personal context
+- **OpenClaw 2026.3.28** — AI avatar framework with personal context
 - **Ollama 0.18.0** — Local LLM serving (KEEP_ALIVE=-1, model always loaded)
 - **marcos-chat model** — Custom Ollama model (Qwen3.5 9B Q4_K_M, 6.6GB, thinking disabled)
 - **web/serve.js** — Zero-dep Node.js server + WebSocket proxy (:18790)
@@ -191,7 +191,7 @@ ssh nvidia@100.65.235.58 "systemctl is-active ollama openclaw-marcos marcos-chat
 
 - **Node.js 22** — OpenClaw + serve.js runtime
 - **Ollama 0.18.0** — LLM serving
-- **OpenClaw 2026.3.2** — AI avatar framework
+- **OpenClaw 2026.3.28** — AI avatar framework
 
 ## Performance Notes
 
